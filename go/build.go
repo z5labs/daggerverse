@@ -37,6 +37,10 @@ type Build struct {
 func (m *Go) Build(
 	pkg string,
 
+	// The Go module source code.
+	// +optional
+	module *dagger.Directory,
+
 	// +optional
 	race bool,
 
@@ -56,6 +60,11 @@ func (m *Go) Build(
 	platform dagger.Platform,
 ) (*Build, error) {
 	ctr := m.Ctr
+
+	if module != nil {
+		ctr = ctr.WithMountedDirectory("/src", module).
+			WithWorkdir("/src")
+	}
 
 	if platform != "" {
 		p, err := platforms.Parse(string(platform))
