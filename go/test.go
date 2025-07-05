@@ -22,11 +22,25 @@ type Test struct {
 func (m *Go) Test(
 	pkg string,
 
+	// The Go module source code.
+	// +optional
+	module *dagger.Directory,
+
 	// +optional
 	race bool,
 ) *Test {
+	ctr := m.Ctr
+	if module != nil {
+		ctr = ctr.WithMountedDirectory("/src", module).
+			WithWorkdir("/src")
+	}
+
+	if race {
+		ctr = ctr.WithEnvVariable("CGO_ENABLED", "1")
+	}
+
 	return &Test{
-		Ctr:  m.Ctr,
+		Ctr:  ctr,
 		Pkg:  pkg,
 		Race: race,
 	}

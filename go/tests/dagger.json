@@ -6,8 +6,16 @@
   },
   "dependencies": [
     {
+      "name": "const",
+      "source": "../../const"
+    },
+    {
       "name": "go",
       "source": ".."
+    },
+    {
+      "name": "noop",
+      "source": "../../noop"
     }
   ]
 }

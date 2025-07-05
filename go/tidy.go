@@ -21,28 +21,39 @@ type Tidy struct {
 
 // Tidy
 func (m *Go) Tidy(
-	source *dagger.Directory,
+	// The Go module source code.
+	// +optional
+	module *dagger.Directory,
 ) *Tidy {
+	ctr := m.Ctr
+	if module != nil {
+		ctr = ctr.WithMountedDirectory("/src", module).
+			WithWorkdir("/src")
+	}
+
 	return &Tidy{
-		Ctr: m.Ctr,
+		Ctr: ctr,
 	}
 }
 
 func (t *Tidy) run(
 	ctx context.Context,
+	expectedReturnCode dagger.ReturnType,
 	args ...string,
 ) (string, error) {
 	cmd := []string{"go", "mod", "tidy"}
 	cmd = append(cmd, args...)
 
-	return t.Ctr.
-		WithExec(cmd).
-		Stdout(ctx)
+	t.Ctr = t.Ctr.WithExec(cmd, dagger.ContainerWithExecOpts{
+		Expect: expectedReturnCode,
+	})
+
+	return t.Ctr.Stdout(ctx)
 }
 
 // Report
 func (t *Tidy) Report(ctx context.Context) ([]string, error) {
-	stdout, err := t.run(ctx, "-v")
+	stdout, err := t.run(ctx, dagger.ReturnTypeSuccess, "-v")
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +64,7 @@ func (t *Tidy) Report(ctx context.Context) ([]string, error) {
 
 // Diff
 func (t *Tidy) Diff(ctx context.Context) ([]string, error) {
-	stdout, err := t.run(ctx, "-diff")
+	stdout, err := t.run(ctx, dagger.ReturnTypeAny, "-diff")
 	if err != nil {
 		return nil, err
 	}

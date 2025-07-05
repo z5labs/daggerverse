@@ -11,17 +11,13 @@ import (
 
 // Go
 type Go struct {
-	// +private
 	Ctr *dagger.Container
-
-	// +private
-	Source *dagger.Directory
 }
 
 func New(
+	// Alpine default does not come with gcc so cgo in unsupported by default.
+	// +default="alpine"
 	version string,
-
-	source *dagger.Directory,
 
 	// +optional
 	from *dagger.Container,
@@ -36,19 +32,30 @@ func New(
 		from = dag.Container().From("golang:" + version)
 	}
 
-	from = from.
-		WithWorkdir("/src").
-		WithMountedDirectory("/src", source)
+	if buildCache == nil {
+		buildCache = dag.CacheVolume("github.com/z5labs/daggerverse/go:build")
+	}
+	if moduleCache == nil {
+		moduleCache = dag.CacheVolume("github.com/z5labs/daggerverse/go:mod")
+	}
 
-	if buildCache != nil {
-		from = from.WithMountedCache("/root/.cache/go-build", buildCache)
-	}
-	if moduleCache != nil {
-		from = from.WithMountedCache("/go/pkg/mod", moduleCache)
-	}
+	from = from.WithMountedCache("/root/.cache/go-build", buildCache)
+	from = from.WithMountedCache("/go/pkg/mod", moduleCache)
 
 	return &Go{
-		Ctr:    from,
-		Source: source,
+		Ctr: from,
 	}
+}
+
+// WithWorkdir
+func (m *Go) WithWorkdir(
+	// +default="/src"
+	path string,
+
+	// The Go module source code.
+	module *dagger.Directory,
+) *Go {
+	m.Ctr = m.Ctr.WithMountedDirectory(path, module).WithWorkdir(path)
+
+	return m
 }
