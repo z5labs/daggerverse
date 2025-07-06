@@ -26,36 +26,31 @@ type ContainerScanner interface {
 
 type Application struct {
 	// +private
-	Go *Go
+	Library *Library
 
 	// +private
-	Linter Linter
-
-	// +private
-	StaticAnalyzer StaticAnalyzer
+	MainPackagePath string
 
 	// +private
 	ContainerScanner ContainerScanner
 }
 
 // A set of functions for working with a application written in Go.
-func (m *Go) Application(
-	// The Go module source code for the library.
-	module *dagger.Directory,
+func (lib *Library) Application(
+	// Path to package main for the application.
+	mainPackagePath string,
 
-	// +optional
-	linter Linter,
-
-	// +optional
-	staticAnalyzer StaticAnalyzer,
-
+	// Specify a tool for scanning built application container before publishing.
 	// +optional
 	containerScanner ContainerScanner,
 ) *Application {
+	if containerScanner == nil {
+		containerScanner = dag.Trivy()
+	}
+
 	return &Application{
-		Go:               m.WithWorkdir("/src", module),
-		Linter:           linter,
-		StaticAnalyzer:   staticAnalyzer,
+		Library:          lib,
+		MainPackagePath:  mainPackagePath,
 		ContainerScanner: containerScanner,
 	}
 }
@@ -74,9 +69,6 @@ func (app *Application) Ci(
 
 	registrySecret *dagger.Secret,
 
-	// +default="."
-	mainPackagePath string,
-
 	// +default=["-s", "-w"]
 	ldflags []string,
 
@@ -92,28 +84,13 @@ func (app *Application) Ci(
 	// +default=["linux/amd64","linux/arm64"]
 	platforms []dagger.Platform,
 ) error {
-	err := app.Generate(ctx, "./...")
-	if err != nil {
-		return err
-	}
-
-	err = app.Tidy(ctx)
-	if err != nil {
-		return err
-	}
-
-	lintReport := app.Lint(ctx)
-
-	coverageReport := app.Test("./...", true)
-
-	err = app.StaticAnalysis(ctx, lintReport, coverageReport)
+	err := app.Library.Ci(ctx)
 	if err != nil {
 		return err
 	}
 
 	variants, err := app.Build(
 		ctx,
-		mainPackagePath,
 		ldflags,
 		buildTags,
 		trimpath,
@@ -151,83 +128,9 @@ func (app *Application) Ci(
 	return nil
 }
 
-// Run generate directives and validate no filesystem changes.
-func (app *Application) Generate(
-	ctx context.Context,
-
-	// +default="./..."
-	pkg string,
-) error {
-	entries, err := app.Go.Generate(pkg, nil).Diff(ctx)
-	if err != nil {
-		return err
-	}
-
-	if len(entries) > 0 {
-		return fmt.Errorf("forgot to run go generate")
-	}
-
-	return nil
-}
-
-// Validate no necessary changes for go.mod or go.sum.
-func (app *Application) Tidy(ctx context.Context) error {
-	diff, err := app.Go.Tidy(nil).Diff(ctx)
-	if err != nil {
-		return err
-	}
-
-	if len(diff) != 0 {
-		return errors.New("forgot to run go mod tidy")
-	}
-
-	return nil
-}
-
-// Lint source code.
-func (app *Application) Lint(ctx context.Context) *dagger.File {
-	if app.Linter == nil {
-		return &dagger.File{}
-	}
-
-	return app.Linter.Lint(ctx, app.Go.Ctr)
-}
-
-// Run tests and return coverage report.
-func (app *Application) Test(
-	// +default="./..."
-	pkg string,
-
-	// +default=true
-	race bool,
-) *dagger.File {
-	return app.Go.Test(pkg, nil, true).Coverage(Atomic)
-}
-
-// Perform static analysis.
-func (app *Application) StaticAnalysis(
-	ctx context.Context,
-	lintReport *dagger.File,
-	coverageReport *dagger.File,
-) error {
-	if app.StaticAnalyzer == nil {
-		return nil
-	}
-
-	return app.StaticAnalyzer.StaticAnalysis(
-		ctx,
-		app.Go.Ctr,
-		lintReport,
-		coverageReport,
-	)
-}
-
 // Produce container image(s) for application.
 func (app *Application) Build(
 	ctx context.Context,
-
-	// +default="."
-	pkg string,
 
 	// +default=["-s", "-w"]
 	ldflags []string,
@@ -249,7 +152,15 @@ func (app *Application) Build(
 	containerCh := make(chan *dagger.Container, len(platforms))
 	for _, platform := range platforms {
 		buildPool.Go(func(ctx context.Context) error {
-			b, err := app.Go.Build(pkg, nil, false, ldflags, tags, trimpath, enableCGO, platform)
+			b, err := app.Library.Module.Build(
+				app.MainPackagePath,
+				false,
+				ldflags,
+				tags,
+				trimpath,
+				enableCGO,
+				platform,
+			)
 			if err != nil {
 				return err
 			}
@@ -307,9 +218,6 @@ func (app *Application) Build(
 func (app *Application) AsService(
 	ctx context.Context,
 
-	// +default="."
-	pkg string,
-
 	// +default=["-s", "-w"]
 	ldflags []string,
 
@@ -330,7 +238,6 @@ func (app *Application) AsService(
 ) (*dagger.Service, error) {
 	variants, err := app.Build(
 		ctx,
-		pkg,
 		ldflags,
 		tags,
 		trimpath,

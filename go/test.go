@@ -19,22 +19,13 @@ type Test struct {
 }
 
 // Run tests within a Go module.
-func (m *Go) Test(
+func (m *Mod) Test(
 	pkg string,
-
-	// The Go module source code.
-	// +optional
-	module *dagger.Directory,
 
 	// +optional
 	race bool,
 ) *Test {
 	ctr := m.Ctr
-	if module != nil {
-		ctr = ctr.WithMountedDirectory("/src", module).
-			WithWorkdir("/src")
-	}
-
 	if race {
 		ctr = ctr.WithEnvVariable("CGO_ENABLED", "1")
 	}

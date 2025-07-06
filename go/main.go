@@ -11,8 +11,8 @@ import (
 
 // Go
 type Go struct {
-	// Base container for all Go related functions.
-	Ctr *dagger.Container
+	// Base container configured for working with Go.
+	Container *dagger.Container
 }
 
 func New(
@@ -29,10 +29,6 @@ func New(
 	// +optional
 	moduleCache *dagger.CacheVolume,
 ) *Go {
-	if from == nil {
-		from = dag.Container().From("golang:" + version)
-	}
-
 	if buildCache == nil {
 		buildCache = dag.CacheVolume("github.com/z5labs/daggerverse/go:build")
 	}
@@ -40,23 +36,14 @@ func New(
 		moduleCache = dag.CacheVolume("github.com/z5labs/daggerverse/go:mod")
 	}
 
-	from = from.WithMountedCache("/root/.cache/go-build", buildCache)
-	from = from.WithMountedCache("/go/pkg/mod", moduleCache)
+	if from == nil {
+		from = dag.Container().
+			From("golang:"+version).
+			WithMountedCache("/root/.cache/go-build", buildCache).
+			WithMountedCache("/go/pkg/mod", moduleCache)
+	}
 
 	return &Go{
-		Ctr: from,
+		Container: from,
 	}
-}
-
-// Mount a given directory as the workdir for the underlying container.
-func (m *Go) WithWorkdir(
-	// +default="/src"
-	path string,
-
-	// The Go module source code.
-	module *dagger.Directory,
-) *Go {
-	m.Ctr = m.Ctr.WithMountedDirectory(path, module).WithWorkdir(path)
-
-	return m
 }
