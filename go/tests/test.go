@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"strings"
 
-	"dagger/tests/internal/dagger"
+	"dagger/gotests/internal/dagger"
 
 	"github.com/sourcegraph/conc/pool"
 	"golang.org/x/tools/cover"
@@ -22,7 +22,7 @@ type Test struct {
 	Go *dagger.Go
 }
 
-func (m *Tests) Test() *Test {
+func (m *GoTests) Test() *Test {
 	return &Test{
 		Go: m.Go,
 	}
