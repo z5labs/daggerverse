@@ -33,7 +33,7 @@ type Build struct {
 	Trimpath bool
 }
 
-// Build
+// Build a Go module.
 func (m *Go) Build(
 	pkg string,
 
@@ -96,7 +96,7 @@ func (m *Go) Build(
 	return b, nil
 }
 
-// Output
+// Retrieve the compiled binary.
 func (b *Build) Output() *dagger.File {
 	args := []string{
 		"go",

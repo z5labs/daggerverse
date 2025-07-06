@@ -18,7 +18,7 @@ type Test struct {
 	Race bool
 }
 
-// Test
+// Run tests within a Go module.
 func (m *Go) Test(
 	pkg string,
 
@@ -54,7 +54,7 @@ const (
 	Set    CoverageMode = "set"
 )
 
-// Coverage
+// Retrieve a coverage profile from running the tests.
 func (t *Test) Coverage(
 	// +default="set"
 	mode CoverageMode,

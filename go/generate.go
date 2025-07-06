@@ -22,8 +22,9 @@ type Generate struct {
 	Pkg string
 }
 
-// Generate
+// Run commands described by directives within existing files.
 func (m *Go) Generate(
+	// Package path to search for directives within.
 	pkg string,
 
 	// The Go module source code.
@@ -56,7 +57,7 @@ func (g *Generate) run(
 	return g.Ctr.Stdout(ctx)
 }
 
-// Report
+// Return all generate directives ran.
 func (g *Generate) Report(ctx context.Context) ([]string, error) {
 	stdout, err := g.run(ctx, g.Pkg, "-x")
 	if err != nil {
@@ -67,7 +68,7 @@ func (g *Generate) Report(ctx context.Context) ([]string, error) {
 	return cmds, nil
 }
 
-// Diff
+// Validate no change to the filesystem after running all generate directives.
 func (g *Generate) Diff(ctx context.Context) ([]string, error) {
 	before := g.Ctr.Directory("/src")
 
@@ -88,7 +89,7 @@ func (g *Generate) Diff(ctx context.Context) ([]string, error) {
 	return entries, nil
 }
 
-// DryRun
+// Return all generate directives which would be ran.
 func (g *Generate) DryRun(ctx context.Context) ([]string, error) {
 	stdout, err := g.run(ctx, g.Pkg, "-n")
 	if err != nil {
