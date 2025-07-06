@@ -23,22 +23,12 @@ type Generate struct {
 }
 
 // Run commands described by directives within existing files.
-func (m *Go) Generate(
+func (m *Mod) Generate(
 	// Package path to search for directives within.
 	pkg string,
-
-	// The Go module source code.
-	// +optional
-	module *dagger.Directory,
 ) *Generate {
-	ctr := m.Ctr
-	if module != nil {
-		ctr = ctr.WithMountedDirectory("/src", module).
-			WithWorkdir("/src")
-	}
-
 	return &Generate{
-		Ctr: ctr,
+		Ctr: m.Ctr,
 		Pkg: pkg,
 	}
 }

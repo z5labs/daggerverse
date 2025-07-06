@@ -37,10 +37,11 @@ func (t *Test) All(ctx context.Context) error {
 }
 
 func (t *Test) CoverageTest(ctx context.Context) error {
-	f := t.Go.Test("./...", dagger.GoTestOpts{
-		Module: dag.CurrentModule().Source().Directory("testdata/testcoverage"),
-		Race:   true,
-	}).Coverage()
+	f := t.Go.Module(dag.CurrentModule().Source().Directory("testdata/testcoverage")).
+		Test("./...", dagger.GoModTestOpts{
+			Race: true,
+		}).
+		Coverage()
 
 	contents, err := f.Contents(ctx)
 	if err != nil {

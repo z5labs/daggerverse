@@ -6,9 +6,12 @@
   },
   "dependencies": [
     {
-      "name": "dirdiff",
-      "source": "github.com/dagger/dagger/modules/dirdiff@v0.18.11",
-      "pin": "cd07403da9ae9ca9239750753e1f331013a23124"
+      "name": "noop",
+      "source": "../noop"
+    },
+    {
+      "name": "trivy",
+      "source": "../trivy"
     }
   ]
 }

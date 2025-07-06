@@ -36,23 +36,25 @@ func (t *Library) All(ctx context.Context) error {
 }
 
 func (l *Library) CiTest(ctx context.Context) error {
-	return l.Go.Library(
-		dag.CurrentModule().Source().Directory("testdata/library/ci"),
-		dagger.GoLibraryOpts{
-			Linter:         dag.Noop().GoLinter().AsGoLinter(),
-			StaticAnalyzer: dag.Noop().GoStaticAnalyzer().AsGoStaticAnalyzer(),
-		},
-	).Ci(ctx)
+	return l.Go.Module(dag.CurrentModule().Source().Directory("testdata/library/ci")).
+		Library(
+			dagger.GoModLibraryOpts{
+				Linter:         dag.Noop().GoLinter().AsGoLinter(),
+				StaticAnalyzer: dag.Noop().GoStaticAnalyzer().AsGoStaticAnalyzer(),
+			},
+		).
+		Ci(ctx)
 }
 
 func (l *Library) TidyTest(ctx context.Context) error {
-	err := l.Go.Library(
-		dag.CurrentModule().Source().Directory("testdata/library/tidy"),
-		dagger.GoLibraryOpts{
-			Linter:         dag.Noop().GoLinter().AsGoLinter(),
-			StaticAnalyzer: dag.Noop().GoStaticAnalyzer().AsGoStaticAnalyzer(),
-		},
-	).Tidy(ctx)
+	err := l.Go.Module(dag.CurrentModule().Source().Directory("testdata/library/tidy")).
+		Library(
+			dagger.GoModLibraryOpts{
+				Linter:         dag.Noop().GoLinter().AsGoLinter(),
+				StaticAnalyzer: dag.Noop().GoStaticAnalyzer().AsGoStaticAnalyzer(),
+			},
+		).
+		Tidy(ctx)
 
 	if err == nil {
 		return errors.New("expected tidy to fail due to missing deps")
@@ -62,13 +64,14 @@ func (l *Library) TidyTest(ctx context.Context) error {
 }
 
 func (l *Library) GenerateTest(ctx context.Context) error {
-	err := l.Go.Library(
-		dag.CurrentModule().Source().Directory("testdata/library/generate"),
-		dagger.GoLibraryOpts{
-			Linter:         dag.Noop().GoLinter().AsGoLinter(),
-			StaticAnalyzer: dag.Noop().GoStaticAnalyzer().AsGoStaticAnalyzer(),
-		},
-	).Generate(ctx)
+	err := l.Go.Module(dag.CurrentModule().Source().Directory("testdata/library/generate")).
+		Library(
+			dagger.GoModLibraryOpts{
+				Linter:         dag.Noop().GoLinter().AsGoLinter(),
+				StaticAnalyzer: dag.Noop().GoStaticAnalyzer().AsGoStaticAnalyzer(),
+			},
+		).
+		Generate(ctx)
 
 	if err == nil {
 		return errors.New("expected generate to fail due to files being changed from go generate")

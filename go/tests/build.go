@@ -36,9 +36,9 @@ func (b *Build) All(ctx context.Context) error {
 }
 
 func (b *Build) WithDefaultsTest(ctx context.Context) error {
-	f := b.Go.Build(".", dagger.GoBuildOpts{
-		Module: dag.CurrentModule().Source().Directory("testdata/buildoutput"),
-	}).Output()
+	f := b.Go.Module(dag.CurrentModule().Source().Directory("testdata/buildoutput")).
+		Build(".").
+		Output()
 
 	n, err := f.Size(ctx)
 	if err != nil {
@@ -53,9 +53,9 @@ func (b *Build) WithDefaultsTest(ctx context.Context) error {
 }
 
 func (b *Build) WithOptionsTest(ctx context.Context) error {
-	f := b.Go.Build(".", dagger.GoBuildOpts{
-		Module: dag.CurrentModule().Source().Directory("testdata/buildoutput"),
-	}).Output()
+	mod := b.Go.Module(dag.CurrentModule().Source().Directory("testdata/buildoutput"))
+
+	f := mod.Build(".").Output()
 
 	withDebugSize, err := f.Size(ctx)
 	if err != nil {
@@ -66,8 +66,7 @@ func (b *Build) WithOptionsTest(ctx context.Context) error {
 		return errors.New("expected non-empty output file")
 	}
 
-	f = b.Go.Build(".", dagger.GoBuildOpts{
-		Module:  dag.CurrentModule().Source().Directory("testdata/buildoutput"),
+	f = mod.Build(".", dagger.GoModBuildOpts{
 		Ldflags: []string{"-s", "-w"},
 	}).Output()
 

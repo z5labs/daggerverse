@@ -20,19 +20,9 @@ type Tidy struct {
 }
 
 // Ensure go.mod matches the source code in the module.
-func (m *Go) Tidy(
-	// The Go module source code.
-	// +optional
-	module *dagger.Directory,
-) *Tidy {
-	ctr := m.Ctr
-	if module != nil {
-		ctr = ctr.WithMountedDirectory("/src", module).
-			WithWorkdir("/src")
-	}
-
+func (m *Mod) Tidy() *Tidy {
 	return &Tidy{
-		Ctr: ctr,
+		Ctr: m.Ctr,
 	}
 }
 

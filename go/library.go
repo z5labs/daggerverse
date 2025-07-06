@@ -16,7 +16,7 @@ import (
 type Linter interface {
 	DaggerObject
 
-	Lint(ctx context.Context, ctr *dagger.Container) *dagger.File
+	Lint(ctr *dagger.Container) *dagger.File
 }
 
 type StaticAnalyzer interface {
@@ -32,7 +32,7 @@ type StaticAnalyzer interface {
 
 type Library struct {
 	// +private
-	Go *Go
+	Module *Mod
 
 	// +private
 	Linter Linter
@@ -42,18 +42,22 @@ type Library struct {
 }
 
 // A set of functions for working with a library written in Go.
-func (m *Go) Library(
-	// The Go module source code for the library.
-	module *dagger.Directory,
-
+func (m *Mod) Library(
 	// +optional
 	linter Linter,
 
 	// +optional
 	staticAnalyzer StaticAnalyzer,
 ) *Library {
+	if linter == nil {
+		linter = dag.Noop().GoLinter()
+	}
+	if staticAnalyzer == nil {
+		staticAnalyzer = dag.Noop().GoStaticAnalyzer()
+	}
+
 	return &Library{
-		Go:             m.WithWorkdir("/src", module),
+		Module:         m,
 		Linter:         linter,
 		StaticAnalyzer: staticAnalyzer,
 	}
@@ -90,7 +94,7 @@ func (lib *Library) Generate(
 	// +default="./..."
 	pkg string,
 ) error {
-	entries, err := lib.Go.Generate(pkg, nil).Diff(ctx)
+	entries, err := lib.Module.Generate(pkg).Diff(ctx)
 	if err != nil {
 		return err
 	}
@@ -104,7 +108,7 @@ func (lib *Library) Generate(
 
 // Validate no necessary changes for go.mod or go.sum.
 func (lib *Library) Tidy(ctx context.Context) error {
-	diff, err := lib.Go.Tidy(nil).Diff(ctx)
+	diff, err := lib.Module.Tidy().Diff(ctx)
 	if err != nil {
 		return err
 	}
@@ -119,10 +123,10 @@ func (lib *Library) Tidy(ctx context.Context) error {
 // Lint source code.
 func (lib *Library) Lint(ctx context.Context) *dagger.File {
 	if lib.Linter == nil {
-		return &dagger.File{}
+		return nil
 	}
 
-	return lib.Linter.Lint(ctx, lib.Go.Ctr)
+	return lib.Linter.Lint(lib.Module.Ctr)
 }
 
 // Run tests and return coverage report.
@@ -133,7 +137,7 @@ func (lib *Library) Test(
 	// +default=true
 	race bool,
 ) *dagger.File {
-	return lib.Go.Test(pkg, nil, true).Coverage(Atomic)
+	return lib.Module.Test(pkg, true).Coverage(Atomic)
 }
 
 // Perform static analysis.
@@ -148,7 +152,7 @@ func (lib *Library) StaticAnalysis(
 
 	return lib.StaticAnalyzer.StaticAnalysis(
 		ctx,
-		lib.Go.Ctr,
+		lib.Module.Ctr,
 		lintReport,
 		coverageReport,
 	)
