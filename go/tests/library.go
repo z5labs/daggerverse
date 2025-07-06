@@ -9,7 +9,7 @@ import (
 	"context"
 	"errors"
 
-	"dagger/tests/internal/dagger"
+	"dagger/gotests/internal/dagger"
 
 	"github.com/sourcegraph/conc/pool"
 )
@@ -19,7 +19,7 @@ type Library struct {
 	Go *dagger.Go
 }
 
-func (m *Tests) Library() *Library {
+func (m *GoTests) Library() *Library {
 	return &Library{
 		Go: m.Go,
 	}

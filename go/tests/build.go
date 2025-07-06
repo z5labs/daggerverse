@@ -10,7 +10,7 @@ import (
 	"errors"
 	"fmt"
 
-	"dagger/tests/internal/dagger"
+	"dagger/gotests/internal/dagger"
 
 	"github.com/sourcegraph/conc/pool"
 )
@@ -20,7 +20,7 @@ type Build struct {
 	Go *dagger.Go
 }
 
-func (m *Tests) Build() *Build {
+func (m *GoTests) Build() *Build {
 	return &Build{
 		Go: m.Go,
 	}

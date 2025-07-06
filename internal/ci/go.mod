@@ -1,4 +1,4 @@
-module dagger/gotests
+module dagger/ci
 
 go 1.24.4
 
@@ -22,7 +22,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.36.0
 	go.opentelemetry.io/proto/otlp v1.6.0
 	golang.org/x/sync v0.15.0
-	golang.org/x/tools v0.34.0
 	google.golang.org/grpc v1.73.0
 )
 
