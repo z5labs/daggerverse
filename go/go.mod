@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.75
 	github.com/Khan/genqlient v0.8.1
 	github.com/containerd/platforms v0.2.1
+	github.com/sourcegraph/conc v0.3.0
 	github.com/vektah/gqlparser/v2 v2.5.28
 	go.opentelemetry.io/otel v1.36.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.12.2
@@ -39,6 +40,8 @@ require (
 	github.com/sosodev/duration v1.3.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.32.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect

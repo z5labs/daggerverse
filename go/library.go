@@ -41,7 +41,7 @@ type Library struct {
 	StaticAnalyzer StaticAnalyzer
 }
 
-// Library provides a set of functions for working with a library written in Go.
+// A set of functions for working with a library written in Go.
 func (m *Go) Library(
 	// The Go module source code for the library.
 	module *dagger.Directory,
@@ -59,23 +59,23 @@ func (m *Go) Library(
 	}
 }
 
-// Ci
-func (l *Library) Ci(ctx context.Context) error {
-	err := l.Generate(ctx, "./...")
+// Run all continuous integration functions.
+func (lib *Library) Ci(ctx context.Context) error {
+	err := lib.Generate(ctx, "./...")
 	if err != nil {
 		return err
 	}
 
-	err = l.Tidy(ctx)
+	err = lib.Tidy(ctx)
 	if err != nil {
 		return err
 	}
 
-	lintReport := l.Lint(ctx)
+	lintReport := lib.Lint(ctx)
 
-	coverageReport := l.Test("./...", true)
+	coverageReport := lib.Test("./...", true)
 
-	err = l.StaticAnalysis(ctx, lintReport, coverageReport)
+	err = lib.StaticAnalysis(ctx, lintReport, coverageReport)
 	if err != nil {
 		return err
 	}
@@ -83,18 +83,17 @@ func (l *Library) Ci(ctx context.Context) error {
 	return nil
 }
 
-// Generate
-func (l *Library) Generate(
+// Run generate directives and validate no filesystem changes.
+func (lib *Library) Generate(
 	ctx context.Context,
 
 	// +default="./..."
 	pkg string,
 ) error {
-	entries, err := l.Go.Generate(pkg, nil).Diff(ctx)
+	entries, err := lib.Go.Generate(pkg, nil).Diff(ctx)
 	if err != nil {
 		return err
 	}
-	fmt.Println("entries", entries)
 
 	if len(entries) > 0 {
 		return fmt.Errorf("forgot to run go generate")
@@ -103,9 +102,9 @@ func (l *Library) Generate(
 	return nil
 }
 
-// Tidy
-func (l *Library) Tidy(ctx context.Context) error {
-	diff, err := l.Go.Tidy(nil).Diff(ctx)
+// Validate no necessary changes for go.mod or go.sum.
+func (lib *Library) Tidy(ctx context.Context) error {
+	diff, err := lib.Go.Tidy(nil).Diff(ctx)
 	if err != nil {
 		return err
 	}
@@ -117,39 +116,39 @@ func (l *Library) Tidy(ctx context.Context) error {
 	return nil
 }
 
-// Lint
-func (l *Library) Lint(ctx context.Context) *dagger.File {
-	if l.Linter == nil {
+// Lint source code.
+func (lib *Library) Lint(ctx context.Context) *dagger.File {
+	if lib.Linter == nil {
 		return &dagger.File{}
 	}
 
-	return l.Linter.Lint(ctx, l.Go.Ctr)
+	return lib.Linter.Lint(ctx, lib.Go.Ctr)
 }
 
-// Test
-func (l *Library) Test(
+// Run tests and return coverage report.
+func (lib *Library) Test(
 	// +default="./..."
 	pkg string,
 
 	// +default=true
 	race bool,
 ) *dagger.File {
-	return l.Go.Test(pkg, nil, true).Coverage(Atomic)
+	return lib.Go.Test(pkg, nil, true).Coverage(Atomic)
 }
 
-// StaticAnalysis
-func (l *Library) StaticAnalysis(
+// Perform static analysis.
+func (lib *Library) StaticAnalysis(
 	ctx context.Context,
 	lintReport *dagger.File,
 	coverageReport *dagger.File,
 ) error {
-	if l.StaticAnalyzer == nil {
+	if lib.StaticAnalyzer == nil {
 		return nil
 	}
 
-	return l.StaticAnalyzer.StaticAnalysis(
+	return lib.StaticAnalyzer.StaticAnalysis(
 		ctx,
-		l.Go.Ctr,
+		lib.Go.Ctr,
 		lintReport,
 		coverageReport,
 	)

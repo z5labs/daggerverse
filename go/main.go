@@ -11,6 +11,7 @@ import (
 
 // Go
 type Go struct {
+	// Base container for all Go related functions.
 	Ctr *dagger.Container
 }
 
@@ -47,7 +48,7 @@ func New(
 	}
 }
 
-// WithWorkdir
+// Mount a given directory as the workdir for the underlying container.
 func (m *Go) WithWorkdir(
 	// +default="/src"
 	path string,

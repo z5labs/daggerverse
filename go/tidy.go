@@ -19,7 +19,7 @@ type Tidy struct {
 	Ctr *dagger.Container
 }
 
-// Tidy
+// Ensure go.mod matches the source code in the module.
 func (m *Go) Tidy(
 	// The Go module source code.
 	// +optional
@@ -51,7 +51,7 @@ func (t *Tidy) run(
 	return t.Ctr.Stdout(ctx)
 }
 
-// Report
+// Apply neccessary changes for go.mod or go.sum and report changes made.
 func (t *Tidy) Report(ctx context.Context) ([]string, error) {
 	stdout, err := t.run(ctx, dagger.ReturnTypeSuccess, "-v")
 	if err != nil {
@@ -62,7 +62,7 @@ func (t *Tidy) Report(ctx context.Context) ([]string, error) {
 	return modules, nil
 }
 
-// Diff
+// Only report necessary changes for go.mod or go.sum.
 func (t *Tidy) Diff(ctx context.Context) ([]string, error) {
 	stdout, err := t.run(ctx, dagger.ReturnTypeAny, "-diff")
 	if err != nil {
