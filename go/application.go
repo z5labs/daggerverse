@@ -21,7 +21,7 @@ import (
 type ContainerScanner interface {
 	DaggerObject
 
-	Scan(ctx context.Context, ctr *dagger.Container) error
+	ScanContainer(ctx context.Context, ctr *dagger.Container) error
 }
 
 type Application struct {
@@ -364,7 +364,7 @@ func (app *Application) Scan(
 
 	for _, ctr := range platformVariants {
 		ep.Go(func(ctx context.Context) error {
-			return app.ContainerScanner.Scan(ctx, ctr)
+			return app.ContainerScanner.ScanContainer(ctx, ctr)
 		})
 	}
 
