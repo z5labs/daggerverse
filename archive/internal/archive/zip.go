@@ -13,6 +13,7 @@ import (
 	"path"
 
 	"github.com/spf13/cobra"
+	"github.com/z5labs/sdk-go/try"
 )
 
 func zipCommand() *cobra.Command {
@@ -84,7 +85,7 @@ func extractZip(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		_, err = io.Copy(out, rc)
+		err = copyZipFile(out, rc)
 		if err != nil {
 			log.ErrorContext(cmd.Context(), "failed to write zip content to output directory", slog.Any("error", err))
 			return err
@@ -92,4 +93,12 @@ func extractZip(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func copyZipFile(wc io.WriteCloser, rc io.ReadCloser) (err error) {
+	defer try.Close(&err, wc)
+	defer try.Close(&err, rc)
+
+	_, err = io.Copy(wc, rc)
+	return
 }

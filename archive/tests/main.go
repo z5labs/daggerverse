@@ -1,16 +1,7 @@
-// A generated module for ArchiveTests functions
+// Copyright (c) 2025 Z5Labs and Contributors
 //
-// This module has been generated via dagger init and serves as a reference to
-// basic module structure as you get started with Dagger.
-//
-// Two functions have been pre-created. You can modify, delete, or add to them,
-// as needed. They demonstrate usage of arguments and return types using simple
-// echo and grep commands. The functions can be called from the dagger CLI or
-// from one of the SDKs.
-//
-// The first line in this comment block is a short description line and the
-// rest is a long description with more detail on the module's purpose or usage,
-// if appropriate. All modules should have a short description.
+// This software is released under the MIT License.
+// https://opensource.org/licenses/MIT
 
 package main
 
@@ -37,6 +28,7 @@ func (m *ArchiveTests) All(ctx context.Context) error {
 	ep := pool.New().WithErrors().WithContext(ctx)
 
 	ep.Go(m.Zip().All)
+	ep.Go(m.Tar().All)
 
 	return ep.Wait()
 }

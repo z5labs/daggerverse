@@ -8,6 +8,7 @@ require (
 	github.com/containerd/platforms v0.2.1
 	github.com/spf13/cobra v1.9.1
 	github.com/vektah/gqlparser/v2 v2.5.28
+	github.com/z5labs/sdk-go v0.2.0
 	go.opentelemetry.io/otel v1.36.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.12.2
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.12.2
