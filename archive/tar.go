@@ -7,18 +7,15 @@ package main
 
 import (
 	"context"
+
+	"dagger/archive/internal/archive"
 	"dagger/archive/internal/dagger"
 )
 
-type Tar struct {
-	// +private
-	Container *dagger.Container
-}
+type Tar struct{}
 
 func (m *Archive) Tar() *Tar {
-	return &Tar{
-		Container: m.Container,
-	}
+	return &Tar{}
 }
 
 // Extract tar contents to a directory
@@ -36,20 +33,15 @@ func (t *Tar) Extract(
 		return nil, err
 	}
 
-	args := []string{"tar", "extract"}
-
-	if gzip {
-		args = append(args, "--gzip")
+	_, err = file.Export(ctx, name)
+	if err != nil {
+		return nil, err
 	}
 
-	args = append(args, name, "out")
+	err = archive.ExtractTar(ctx, name, "out", gzip)
+	if err != nil {
+		return nil, err
+	}
 
-	dir := t.Container.
-		WithFile(name, file).
-		WithExec(args, dagger.ContainerWithExecOpts{
-			UseEntrypoint: true,
-		}).
-		Directory("out")
-
-	return dir, nil
+	return dag.CurrentModule().Workdir("out"), nil
 }

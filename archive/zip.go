@@ -8,18 +8,14 @@ package main
 import (
 	"context"
 
+	"dagger/archive/internal/archive"
 	"dagger/archive/internal/dagger"
 )
 
-type Zip struct {
-	// +private
-	Container *dagger.Container
-}
+type Zip struct{}
 
 func (m *Archive) Zip() *Zip {
-	return &Zip{
-		Container: m.Container,
-	}
+	return &Zip{}
 }
 
 // Extract zip contents to a directory
@@ -32,14 +28,15 @@ func (z *Zip) Extract(
 		return nil, err
 	}
 
-	args := []string{"zip", "extract", name, "out"}
+	_, err = file.Export(ctx, name)
+	if err != nil {
+		return nil, err
+	}
 
-	dir := z.Container.
-		WithFile(name, file).
-		WithExec(args, dagger.ContainerWithExecOpts{
-			UseEntrypoint: true,
-		}).
-		Directory("out")
+	err = archive.ExtractZip(ctx, name, "out")
+	if err != nil {
+		return nil, err
+	}
 
-	return dir, nil
+	return dag.CurrentModule().Workdir("out"), nil
 }
