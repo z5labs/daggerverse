@@ -8,63 +8,41 @@ package archive
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
 	"io"
 	"log/slog"
 	"os"
 	"path"
 
-	"github.com/spf13/cobra"
+	"dagger/archive/internal/dagger"
+
 	"github.com/z5labs/sdk-go/try"
 )
 
-func tarCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "tar",
-		Short: "Utilities for working with TAR archives.",
-	}
+func ExtractTar(ctx context.Context, filename, out string, isGziped bool) error {
+	_, span := dagger.Tracer().Start(ctx, "archive.ExtractTar")
+	defer span.End()
 
-	cmd.AddCommand(
-		tarExtractCommand(),
-	)
+	log := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{}))
 
-	return cmd
-}
-
-func tarExtractCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "extract FILE DIR",
-		Short: "Extract a TAR archive to a specified directory.",
-		Args:  cobra.ExactArgs(2),
-		RunE:  extractTar,
-	}
-
-	cmd.Flags().Bool("gzip", false, "Enable gzip decompression.")
-
-	return cmd
-}
-
-func extractTar(cmd *cobra.Command, args []string) error {
-	log := slog.New(slog.NewJSONHandler(cmd.ErrOrStderr(), &slog.HandlerOptions{}))
-
-	err := os.MkdirAll(args[1], os.ModeDir)
+	err := os.MkdirAll(out, os.ModeDir)
 	if err != nil {
-		log.ErrorContext(cmd.Context(), "failed to create output directory", slog.Any("error", err))
+		log.ErrorContext(ctx, "failed to create output directory", slog.Any("error", err))
 		return err
 	}
 
-	f, err := os.Open(args[0])
+	f, err := os.Open(filename)
 	if err != nil {
-		log.ErrorContext(cmd.Context(), "failed to open file", slog.Any("error", err))
+		log.ErrorContext(ctx, "failed to open file", slog.Any("error", err))
 		return err
 	}
 	defer f.Close()
 
 	var stream io.Reader = f
-	isGziped, _ := cmd.Flags().GetBool("gzip")
 	if isGziped {
 		stream, err = gzip.NewReader(stream)
 		if err != nil {
-			log.ErrorContext(cmd.Context(), "failed to create gzip reader", slog.Any("error", err))
+			log.ErrorContext(ctx, "failed to create gzip reader", slog.Any("error", err))
 			return err
 		}
 	}
@@ -76,7 +54,7 @@ func extractTar(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 		if err != nil {
-			log.ErrorContext(cmd.Context(), "failed to get header", slog.Any("error", err))
+			log.ErrorContext(ctx, "failed to get header", slog.Any("error", err))
 			return err
 		}
 
@@ -86,21 +64,21 @@ func extractTar(cmd *cobra.Command, args []string) error {
 
 		dir, _ := path.Split(h.Name)
 		if dir != "" {
-			err = os.MkdirAll(path.Join(args[1], dir), os.ModeDir)
+			err = os.MkdirAll(path.Join(out, dir), os.ModeDir)
 			if err != nil {
-				log.ErrorContext(cmd.Context(), "failed to create output sub dir", slog.Any("error", err))
+				log.ErrorContext(ctx, "failed to create output sub dir", slog.Any("error", err))
 				return err
 			}
 		}
 
-		f, err := os.Create(path.Join(args[1], h.Name))
+		f, err := os.Create(path.Join(out, h.Name))
 		if err != nil {
 			return err
 		}
 
 		err = copyTarFile(f, tr)
 		if err != nil {
-			log.ErrorContext(cmd.Context(), "failed to write tar content to output directory", slog.Any("error", err))
+			log.ErrorContext(ctx, "failed to write tar content to output directory", slog.Any("error", err))
 			return err
 		}
 	}

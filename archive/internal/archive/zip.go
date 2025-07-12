@@ -7,51 +7,32 @@ package archive
 
 import (
 	"archive/zip"
+	"context"
 	"io"
 	"log/slog"
 	"os"
 	"path"
 
-	"github.com/spf13/cobra"
+	"dagger/archive/internal/dagger"
+
 	"github.com/z5labs/sdk-go/try"
 )
 
-func zipCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "zip",
-		Short: "Utilities for working with ZIP archives.",
-	}
+func ExtractZip(ctx context.Context, filename, out string) error {
+	_, span := dagger.Tracer().Start(ctx, "archive.ExtractZip")
+	defer span.End()
 
-	cmd.AddCommand(
-		zipExtractCommand(),
-	)
+	log := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{}))
 
-	return cmd
-}
-
-func zipExtractCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "extract FILE DIR",
-		Short: "Extract a ZIP archive to a specified directory.",
-		Args:  cobra.ExactArgs(2),
-		RunE:  extractZip,
-	}
-
-	return cmd
-}
-
-func extractZip(cmd *cobra.Command, args []string) error {
-	log := slog.New(slog.NewJSONHandler(cmd.ErrOrStderr(), &slog.HandlerOptions{}))
-
-	err := os.MkdirAll(args[1], os.ModeDir)
+	err := os.MkdirAll(out, os.ModeDir)
 	if err != nil {
-		log.ErrorContext(cmd.Context(), "failed to create output directory", slog.Any("error", err))
+		log.ErrorContext(ctx, "failed to create output directory", slog.Any("error", err))
 		return err
 	}
 
-	zr, err := zip.OpenReader(args[0])
+	zr, err := zip.OpenReader(filename)
 	if err != nil {
-		log.ErrorContext(cmd.Context(), "failed to open file", slog.Any("error", err))
+		log.ErrorContext(ctx, "failed to open file", slog.Any("error", err))
 		return err
 	}
 	defer zr.Close()
@@ -61,9 +42,9 @@ func extractZip(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		err = os.MkdirAll(path.Join(args[1], zipFile.Name), os.ModeDir)
+		err = os.MkdirAll(path.Join(out, zipFile.Name), os.ModeDir)
 		if err != nil {
-			log.ErrorContext(cmd.Context(), "failed to create output dir", slog.Any("error", err))
+			log.ErrorContext(ctx, "failed to create output dir", slog.Any("error", err))
 			return err
 		}
 	}
@@ -73,21 +54,21 @@ func extractZip(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		out, err := os.Create(path.Join(args[1], zipFile.Name))
+		out, err := os.Create(path.Join(out, zipFile.Name))
 		if err != nil {
-			log.ErrorContext(cmd.Context(), "failed to create output file", slog.Any("error", err))
+			log.ErrorContext(ctx, "failed to create output file", slog.Any("error", err))
 			return err
 		}
 
 		rc, err := zipFile.Open()
 		if err != nil {
-			log.ErrorContext(cmd.Context(), "failed to open zip content", slog.Any("error", err))
+			log.ErrorContext(ctx, "failed to open zip content", slog.Any("error", err))
 			return err
 		}
 
 		err = copyZipFile(out, rc)
 		if err != nil {
-			log.ErrorContext(cmd.Context(), "failed to write zip content to output directory", slog.Any("error", err))
+			log.ErrorContext(ctx, "failed to write zip content to output directory", slog.Any("error", err))
 			return err
 		}
 	}
