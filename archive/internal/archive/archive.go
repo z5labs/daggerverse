@@ -36,6 +36,7 @@ func archiveCommand() *cobra.Command {
 
 	cmd.AddCommand(
 		zipCommand(),
+		tarCommand(),
 	)
 
 	return cmd
