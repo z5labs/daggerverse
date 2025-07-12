@@ -6,6 +6,10 @@
   },
   "dependencies": [
     {
+      "name": "archive-tests",
+      "source": "../../archive/tests"
+    },
+    {
       "name": "go-tests",
       "source": "../../go/tests"
     }

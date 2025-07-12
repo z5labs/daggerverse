@@ -26,5 +26,7 @@ func (t *Tests) All(ctx context.Context) error {
 		Version: "latest",
 	}).All)
 
+	ep.Go(dag.ArchiveTests().All)
+
 	return ep.Wait()
 }
