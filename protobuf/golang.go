@@ -5,7 +5,10 @@
 
 package main
 
-import "fmt"
+import (
+	"dagger/protobuf/internal/dagger"
+	"fmt"
+)
 
 type Go struct {
 	Protobuf *Protobuf
@@ -16,19 +19,30 @@ func (m *Protobuf) Go(
 	version string,
 ) (*Go, error) {
 	archiveType := "tar.gz"
-	if m.Plaform.OS == "windows" {
+	if m.OS == "windows" {
 		archiveType = "zip"
 	}
 
 	plugin := dag.HTTP(fmt.Sprintf(
 		"https://github.com/protocolbuffers/protobuf-go/releases/download/%s/protoc-gen-go.%s.%s.%s.%s",
 		version,
-		m.Plaform.OS,
-		m.Plaform.Architecture,
+		version,
+		m.OS,
+		m.Arch,
 		archiveType,
 	))
 
-	withPlugin, err := m.WithPlugin("protoc-gen-go", plugin)
+	var dir *dagger.Directory
+	switch archiveType {
+	case "zip":
+		dir = dag.Archive().Zip().Extract(plugin)
+	case "tar.gz":
+		dir = dag.Archive().Tar().Extract(plugin, dagger.ArchiveTarExtractOpts{
+			Gzip: true,
+		})
+	}
+
+	withPlugin, err := m.WithPlugin("protoc-gen-go", dir.File("protoc-gen-go"))
 	if err != nil {
 		return nil, err
 	}

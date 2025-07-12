@@ -20,7 +20,10 @@ type Protobuf struct {
 	Container *dagger.Container
 
 	// +private
-	Plaform platforms.Platform
+	OS string
+
+	// +private
+	Arch string
 }
 
 func New(
@@ -51,7 +54,8 @@ func New(
 
 	return &Protobuf{
 		Container: from,
-		Plaform:   p,
+		OS:        p.OS,
+		Arch:      p.Architecture,
 	}, nil
 }
 
@@ -69,8 +73,11 @@ func newContainer(version string, platform platforms.Platform) (*dagger.Containe
 		arch,
 	))
 
+	dir := dag.Archive().Zip().Extract(protoc)
+
 	c := dag.Container().
-		WithFile("/bin/protoc", protoc)
+		WithDirectory("/protobuf", dir).
+		WithEnvVariable("PATH", "/protobuf/bin/")
 
 	return c, nil
 }
@@ -96,7 +103,7 @@ func (m *Protobuf) WithPlugin(name string, bin *dagger.File) (*Protobuf, error) 
 		return nil, errors.New("plugin name must start with: protoc-gen-")
 	}
 
-	m.Container = m.Container.WithFile("/protobuf/plugin/"+name, bin)
+	m.Container = m.Container.WithFile("/protobuf/bin/"+name, bin)
 
 	return m, nil
 }

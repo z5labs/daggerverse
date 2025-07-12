@@ -67,9 +67,7 @@ func (p *Protoc) Compile(
 		}
 	}
 
-	for _, p := range proto {
-		args = append(args, p)
-	}
+	args = append(args, proto...)
 
 	return p.Protobuf.Container.
 		WithMountedDirectory("/src", source).
