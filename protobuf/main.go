@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"dagger/protobuf/internal/dagger"
@@ -76,8 +77,12 @@ func newContainer(version string, platform platforms.Platform) (*dagger.Containe
 	dir := dag.Archive().Zip().Extract(protoc)
 
 	c := dag.Container().
+		From("alpine").
 		WithDirectory("/protobuf", dir).
-		WithEnvVariable("PATH", "/protobuf/bin/")
+		WithEnvVariable("PATH", "/protobuf/bin/:${PATH}", dagger.ContainerWithEnvVariableOpts{
+			Expand: true,
+		}).
+		WithExec([]string{"chmod", "+x", "/protobuf/bin/protoc"})
 
 	return c, nil
 }
@@ -99,11 +104,15 @@ func mapToProtoArch(arch string) (string, error) {
 
 // Register the given binary file as a protoc plugin.
 func (m *Protobuf) WithPlugin(name string, bin *dagger.File) (*Protobuf, error) {
-	if strings.HasPrefix(name, "protoc-gen-") {
+	if !strings.HasPrefix(name, "protoc-gen-") {
 		return nil, errors.New("plugin name must start with: protoc-gen-")
 	}
 
-	m.Container = m.Container.WithFile("/protobuf/bin/"+name, bin)
+	binPath := path.Join("/protobuf/bin", name)
+
+	m.Container = m.Container.
+		WithFile(binPath, bin).
+		WithExec([]string{"chmod", "+x", binPath})
 
 	return m, nil
 }

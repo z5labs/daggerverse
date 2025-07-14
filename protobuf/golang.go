@@ -6,8 +6,9 @@
 package main
 
 import (
-	"dagger/protobuf/internal/dagger"
 	"fmt"
+
+	"dagger/protobuf/internal/dagger"
 )
 
 type Go struct {
@@ -55,12 +56,14 @@ func (m *Protobuf) Go(
 // Generate Go code.
 func (p *Protoc) Go(
 	outDir string,
+
+	// +optional
 	opt []string,
 ) *Protoc {
 	p.Generators = append(p.Generators, generator{
-		name:   "go",
-		outDir: outDir,
-		opts:   opt,
+		Name:   "go",
+		OutDir: outDir,
+		Opts:   opt,
 	})
 
 	return p
@@ -74,12 +77,14 @@ func (g *Go) Grpc() *Go {
 // Generate GRPC Go code.
 func (p *Protoc) GoGrpc(
 	outDir string,
+
+	// +optional
 	opt []string,
 ) *Protoc {
 	p.Generators = append(p.Generators, generator{
-		name:   "go-grpc",
-		outDir: outDir,
-		opts:   opt,
+		Name:   "go-grpc",
+		OutDir: outDir,
+		Opts:   opt,
 	})
 
 	return p

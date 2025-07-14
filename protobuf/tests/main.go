@@ -25,5 +25,7 @@ func New(
 func (m *ProtobufTests) All(ctx context.Context) error {
 	ep := pool.New().WithErrors().WithContext(ctx)
 
+	ep.Go(m.Go().All)
+
 	return ep.Wait()
 }

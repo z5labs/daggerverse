@@ -6,16 +6,15 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"dagger/protobuf/internal/dagger"
 )
 
 type generator struct {
-	name   string
-	outDir string
-	opts   []string
+	Name   string
+	OutDir string
+	Opts   []string
 }
 
 type Protoc struct {
@@ -35,8 +34,6 @@ func (m *Protobuf) Protoc() *Protoc {
 
 // Compile protocol buffer definitions.
 func (p *Protoc) Compile(
-	ctx context.Context,
-
 	source *dagger.Directory,
 
 	proto []string,
@@ -45,33 +42,62 @@ func (p *Protoc) Compile(
 	// +default=["."]
 	includePath []string,
 
-	// +default=true
-	includeWellKnownTypes bool,
-) (string, error) {
-	args := []string{
+	// +optional
+	excludeWellKnownTypes bool,
+) (*dagger.Directory, error) {
+	args, outDirs := buildCompileArgs(
+		excludeWellKnownTypes,
+		includePath,
+		p.Generators,
+		proto,
+	)
+
+	c := p.Protobuf.Container.
+		WithMountedDirectory("/src", source).
+		WithWorkdir("/src")
+
+	for _, outDir := range outDirs {
+		c = c.WithExec([]string{"mkdir", "-p", outDir})
+	}
+
+	c = c.WithExec(args)
+
+	dir := dag.Directory()
+	for _, outDir := range outDirs {
+		dir = dir.WithDirectory(outDir, c.Directory(outDir))
+	}
+
+	return dir, nil
+}
+
+func buildCompileArgs(
+	excludeWellKnownTypes bool,
+	includePath []string,
+	generators []generator,
+	proto []string,
+) (args []string, outDirs []string) {
+	args = []string{
 		"protoc",
 	}
-	if includeWellKnownTypes {
-		args = append(args, "-I") // TODO
+	if !excludeWellKnownTypes {
+		args = append(args, "-I", "/protobuf/include/")
 	}
 
 	for _, p := range includePath {
 		args = append(args, "-I", p)
 	}
 
-	for _, g := range p.Generators {
-		args = append(args, fmt.Sprintf("--%s_out", g.name), g.outDir)
+	for _, g := range generators {
+		outDirs = append(outDirs, g.OutDir)
 
-		for _, opt := range g.opts {
-			args = append(args, fmt.Sprintf("--%s_opt", g.name), opt)
+		args = append(args, fmt.Sprintf("--%s_out", g.Name), g.OutDir)
+
+		for _, opt := range g.Opts {
+			args = append(args, fmt.Sprintf("--%s_opt", g.Name), opt)
 		}
 	}
 
 	args = append(args, proto...)
 
-	return p.Protobuf.Container.
-		WithMountedDirectory("/src", source).
-		WithWorkdir("/src").
-		WithExec(args).
-		Stdout(ctx)
+	return
 }
