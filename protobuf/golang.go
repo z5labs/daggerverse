@@ -6,7 +6,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"strings"
 
 	"dagger/protobuf/internal/dagger"
 )
@@ -18,15 +20,18 @@ type Go struct {
 // Install the protoc-gen-go plugin.
 func (m *Protobuf) Go(
 	version string,
-) (*Go, error) {
+) *Go {
+	const name = "protoc-gen-go"
+
 	archiveType := "tar.gz"
 	if m.OS == "windows" {
 		archiveType = "zip"
 	}
 
 	plugin := dag.HTTP(fmt.Sprintf(
-		"https://github.com/protocolbuffers/protobuf-go/releases/download/%s/protoc-gen-go.%s.%s.%s.%s",
+		"https://github.com/protocolbuffers/protobuf-go/releases/download/%s/%s.%s.%s.%s.%s",
 		version,
+		name,
 		version,
 		m.OS,
 		m.Arch,
@@ -43,14 +48,11 @@ func (m *Protobuf) Go(
 		})
 	}
 
-	withPlugin, err := m.WithPlugin("protoc-gen-go", dir.File("protoc-gen-go"))
-	if err != nil {
-		return nil, err
-	}
+	m = m.WithPlugin(name, dir.File(name))
 
 	return &Go{
-		Protobuf: withPlugin,
-	}, nil
+		Protobuf: m,
+	}
 }
 
 // Generate Go code.
@@ -70,8 +72,28 @@ func (p *Protoc) Go(
 }
 
 // Install the protoc-gen-go-grpc plugin.
-func (g *Go) Grpc() *Go {
-	return g
+func (g *Go) Grpc(
+	ctx context.Context,
+
+	// +default="latest"
+	version string,
+) (*Go, error) {
+	const name = "protoc-gen-go-grpc"
+
+	c := dag.Container().
+		From("golang:alpine").
+		WithExec([]string{"go", "install", fmt.Sprintf("google.golang.org/grpc/cmd/%s@%s", name, version)})
+
+	binPath, err := c.
+		WithExec([]string{"which", name}).
+		Stdout(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	g.Protobuf = g.Protobuf.WithPlugin(name, c.File(strings.TrimSpace(binPath)))
+
+	return g, nil
 }
 
 // Generate GRPC Go code.

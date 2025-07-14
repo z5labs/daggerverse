@@ -103,18 +103,14 @@ func mapToProtoArch(arch string) (string, error) {
 }
 
 // Register the given binary file as a protoc plugin.
-func (m *Protobuf) WithPlugin(name string, bin *dagger.File) (*Protobuf, error) {
-	if !strings.HasPrefix(name, "protoc-gen-") {
-		return nil, errors.New("plugin name must start with: protoc-gen-")
-	}
-
+func (m *Protobuf) WithPlugin(name string, bin *dagger.File) *Protobuf {
 	binPath := path.Join("/protobuf/bin", name)
 
 	m.Container = m.Container.
 		WithFile(binPath, bin).
 		WithExec([]string{"chmod", "+x", binPath})
 
-	return m, nil
+	return m
 }
 
 // Copy well-known types, protoc, and plugins to the provided container.
