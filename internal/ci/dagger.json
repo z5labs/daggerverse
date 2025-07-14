@@ -12,6 +12,10 @@
     {
       "name": "go-tests",
       "source": "../../go/tests"
+    },
+    {
+      "name": "protobuf-tests",
+      "source": "../../protobuf/tests"
     }
   ]
 }

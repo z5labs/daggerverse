@@ -1,0 +1,9 @@
+edition = "2023";
+
+package test;
+
+option go_package = "dagger/protobuf-tests/testdata/protopb";
+
+message Hello {
+    string world = 1;
+}

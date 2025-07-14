@@ -22,11 +22,13 @@ func (m *Ci) Tests() *Tests {
 func (t *Tests) All(ctx context.Context) error {
 	ep := pool.New().WithErrors().WithContext(ctx)
 
+	ep.Go(dag.ArchiveTests().All)
+
 	ep.Go(dag.GoTests(dagger.GoTestsOpts{
 		Version: "latest",
 	}).All)
 
-	ep.Go(dag.ArchiveTests().All)
+	ep.Go(dag.ProtobufTests().All)
 
 	return ep.Wait()
 }
