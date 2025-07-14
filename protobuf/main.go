@@ -115,5 +115,9 @@ func (m *Protobuf) WithPlugin(name string, bin *dagger.File) *Protobuf {
 
 // Copy well-known types, protoc, and plugins to the provided container.
 func (m *Protobuf) CopyTo(container *dagger.Container) *dagger.Container {
-	return container
+	return container.
+		WithDirectory("/protobuf", m.Container.Directory("/protobuf")).
+		WithEnvVariable("PATH", "/protobuf/bin/:${PATH}", dagger.ContainerWithEnvVariableOpts{
+			Expand: true,
+		})
 }
