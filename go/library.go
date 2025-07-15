@@ -94,13 +94,18 @@ func (lib *Library) Generate(
 	// +default="./..."
 	pkg string,
 ) error {
-	entries, err := lib.Module.Generate(pkg).Diff(ctx)
+	diff, err := lib.Module.Generate(pkg).Diff(ctx)
 	if err != nil {
 		return err
 	}
 
+	entries, err := diff.Entries(ctx)
+	if err != nil {
+		return nil
+	}
+
 	if len(entries) > 0 {
-		return fmt.Errorf("forgot to run go generate")
+		return fmt.Errorf("forgot to run go generate: %v", entries)
 	}
 
 	return nil

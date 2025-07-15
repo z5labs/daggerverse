@@ -59,7 +59,7 @@ func (g *Generate) Report(ctx context.Context) ([]string, error) {
 }
 
 // Validate no change to the filesystem after running all generate directives.
-func (g *Generate) Diff(ctx context.Context) ([]string, error) {
+func (g *Generate) Diff(ctx context.Context) (*dagger.Directory, error) {
 	before := g.Ctr.Directory("/src")
 
 	cmds, err := g.Report(ctx)
@@ -70,13 +70,7 @@ func (g *Generate) Diff(ctx context.Context) ([]string, error) {
 
 	after := g.Ctr.Directory("/src")
 
-	entries, err := before.Diff(after).Entries(ctx)
-	if err != nil {
-		fmt.Println("failed to diff:", err)
-		return entries, nil
-	}
-
-	return entries, nil
+	return before.Diff(after), nil
 }
 
 // Return all generate directives which would be ran.
