@@ -31,6 +31,8 @@ func (t *Library) All(ctx context.Context) error {
 	ep.Go(t.CiTest)
 	ep.Go(t.TidyTest)
 	ep.Go(t.GenerateTest)
+	ep.Go(t.GenerateContentDiffTest)
+	ep.Go(t.GenerateNoDiffTest)
 
 	return ep.Wait()
 }
@@ -78,4 +80,32 @@ func (l *Library) GenerateTest(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (l *Library) GenerateContentDiffTest(ctx context.Context) error {
+	err := l.Go.Module(dag.CurrentModule().Source().Directory("testdata/library/generate-content-diff")).
+		Library(
+			dagger.GoModLibraryOpts{
+				Linter:         dag.Noop().GoLinter().AsGoLinter(),
+				StaticAnalyzer: dag.Noop().GoStaticAnalyzer().AsGoStaticAnalyzer(),
+			},
+		).
+		Generate(ctx)
+
+	if err == nil {
+		return errors.New("expected generate to fail due to files being changed from go generate")
+	}
+
+	return nil
+}
+
+func (l *Library) GenerateNoDiffTest(ctx context.Context) error {
+	return l.Go.Module(dag.CurrentModule().Source().Directory("testdata/library/generate-no-diff")).
+		Library(
+			dagger.GoModLibraryOpts{
+				Linter:         dag.Noop().GoLinter().AsGoLinter(),
+				StaticAnalyzer: dag.Noop().GoStaticAnalyzer().AsGoStaticAnalyzer(),
+			},
+		).
+		Generate(ctx)
 }

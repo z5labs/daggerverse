@@ -70,6 +70,20 @@ func (g *Generate) Diff(ctx context.Context) (*dagger.Directory, error) {
 
 	after := g.Ctr.Directory("/src")
 
+	beforeDigest, err := before.Digest(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	afterDigest, err := after.Digest(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if beforeDigest == afterDigest {
+		return dag.Directory(), nil
+	}
+
 	return before.Diff(after), nil
 }
 
