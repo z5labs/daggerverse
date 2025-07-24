@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -59,32 +60,34 @@ func (g *Generate) Report(ctx context.Context) ([]string, error) {
 }
 
 // Validate no change to the filesystem after running all generate directives.
-func (g *Generate) Diff(ctx context.Context) (*dagger.Directory, error) {
+func (g *Generate) Diff(ctx context.Context) error {
 	before := g.Ctr.Directory("/src")
 
 	cmds, err := g.Report(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	fmt.Println(strings.Join(cmds, "\n"))
 
 	after := g.Ctr.Directory("/src")
 
-	beforeDigest, err := before.Digest(ctx)
+	stdout, err := dag.Container().
+		From("alpine").
+		WithExec([]string{"apk", "add", "diffutils"}).
+		WithMountedDirectory("/before", before).
+		WithMountedDirectory("/after", after).
+		WithExec([]string{"diff", "-r", "-y", "--suppress-common-lines", "/before", "/after"}).
+		Stdout(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	afterDigest, err := after.Digest(ctx)
-	if err != nil {
-		return nil, err
+	fmt.Println(stdout)
+	if stdout != "" {
+		return errors.New("generate resulted in difference before and after")
 	}
 
-	if beforeDigest == afterDigest {
-		return dag.Directory(), nil
-	}
-
-	return before.Diff(after), nil
+	return nil
 }
 
 // Return all generate directives which would be ran.
